@@ -24,12 +24,15 @@ export default function JoinRoomPage() {
     setLoading(true);
     setError("");
 
+    // Find room
     const { data: room, error: roomError } = await supabase
       .from("dreams_rooms")
       .select("*")
       .eq("code", code.trim().toUpperCase())
       .eq("status", "waiting")
-      .single();
+      .maybeSingle();
+
+    console.log("Room found:", room, "Error:", roomError);
 
     if (roomError || !room) {
       setError("Room not found or game already started. Check your code!");
@@ -43,13 +46,16 @@ export default function JoinRoomPage() {
       return;
     }
 
+    // Update room
     const { error: joinError } = await supabase
       .from("dreams_rooms")
       .update({ guest_id: userId, status: "active" })
       .eq("id", room.id);
 
+    console.log("Join error:", joinError);
+
     if (joinError) {
-      setError("Failed to join room. Try again!");
+      setError(`Failed to join: ${joinError.message}`);
       setLoading(false);
       return;
     }

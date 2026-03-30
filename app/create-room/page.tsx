@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 
 function generateRoomCode(): string {
@@ -15,16 +15,14 @@ function generateRoomCode(): string {
 export default function CreateRoomPage() {
   const [roomCode, setRoomCode] = useState("");
   const [loading, setLoading] = useState(true);
-  const [waiting, setWaiting] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [roomId, setRoomId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     async function createRoom() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { window.location.href = "/login"; return; }
-      setUserId(user.id);
 
       // Generate unique code
       let code = "";
@@ -46,7 +44,7 @@ export default function CreateRoomPage() {
         .select()
         .single();
 
-      if (error) {
+      if (error || !room) {
         console.error(error);
         return;
       }
@@ -54,9 +52,8 @@ export default function CreateRoomPage() {
       setRoomCode(code);
       setRoomId(room.id);
       setLoading(false);
-      setWaiting(true);
 
-      // Listen for guest joining
+      // Listen for guest joining via polling as backup
       const channel = supabase
         .channel(`room-${room.id}`)
         .on("postgres_changes", {
@@ -65,13 +62,35 @@ export default function CreateRoomPage() {
           table: "dreams_rooms",
           filter: `id=eq.${room.id}`,
         }, (payload) => {
+          console.log("Room update received:", payload.new);
           if (payload.new.guest_id && payload.new.status === "active") {
             window.location.href = `/game/${room.id}`;
           }
         })
-        .subscribe();
+        .subscribe((status) => {
+          console.log("Subscription status:", status);
+        });
 
-      return () => { supabase.removeChannel(channel); };
+      channelRef.current = channel;
+
+      // Polling fallback every 3 seconds
+      const pollInterval = setInterval(async () => {
+        const { data: updatedRoom } = await supabase
+          .from("dreams_rooms")
+          .select("*")
+          .eq("id", room.id)
+          .single();
+        
+        if (updatedRoom?.guest_id && updatedRoom?.status === "active") {
+          clearInterval(pollInterval);
+          window.location.href = `/game/${room.id}`;
+        }
+      }, 3000);
+
+      return () => {
+        clearInterval(pollInterval);
+        if (channelRef.current) supabase.removeChannel(channelRef.current);
+      };
     }
     createRoom();
   }, []);
@@ -106,7 +125,6 @@ export default function CreateRoomPage() {
           Share this code with your friend
         </p>
 
-        {/* Room code */}
         <div style={{
           background: "var(--bg-card)",
           border: "2px solid var(--accent-gold)",
@@ -132,7 +150,6 @@ export default function CreateRoomPage() {
           </button>
         </div>
 
-        {/* Waiting indicator */}
         <div style={{
           background: "var(--bg-card)",
           border: "1px solid var(--border-color)",
