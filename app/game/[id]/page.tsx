@@ -65,7 +65,9 @@ function CardComponent({
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between",
         padding: small ? "3px" : "5px 4px", position: "relative",
         border: selected ? "2px solid #c9a84c" : "1px solid #d0c0b0",
+        // Selected card rises up — z-index ensures it renders above adjacent elements
         transform: selected ? "translateY(-18px)" : "none",
+        zIndex: selected ? 10 : 1,
         transition: "transform 0.15s ease, box-shadow 0.15s ease",
         boxShadow: selected ? "0 14px 36px rgba(201,168,76,0.55)" : "0 3px 10px rgba(0,0,0,0.45)",
         flexShrink: 0, userSelect: "none",
@@ -95,46 +97,28 @@ function WonCardsModal({ cards, label, score, onClose }: {
   cards: Card[]; label: string; score: number; onClose: () => void;
 }) {
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, zIndex: 100,
-        background: "rgba(0,0,0,0.78)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: 20,
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          background: "var(--bg-card)", borderRadius: 16,
-          border: "1px solid var(--border-color)",
-          padding: "20px 16px", width: "100%", maxWidth: 360,
-          maxHeight: "80vh", display: "flex", flexDirection: "column", gap: 14,
-        }}
-      >
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 100,
+      background: "rgba(0,0,0,0.78)",
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: "var(--bg-card)", borderRadius: 16,
+        border: "1px solid var(--border-color)",
+        padding: "20px 16px", width: "100%", maxWidth: 360,
+        maxHeight: "80vh", display: "flex", flexDirection: "column", gap: 14,
+      }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ color: "var(--accent-gold)", fontWeight: "800", fontSize: 15 }}>
-              🏆 {label}'s winnings
-            </div>
-            <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2 }}>
-              {cards.length} cards · {score} pts total
-            </div>
+            <div style={{ color: "var(--accent-gold)", fontWeight: "800", fontSize: 15 }}>🏆 {label}'s winnings</div>
+            <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2 }}>{cards.length} cards · {score} pts total</div>
           </div>
-          <button
-            onClick={onClose}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 22, lineHeight: 1, padding: 4 }}
-          >✕</button>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 22, lineHeight: 1, padding: 4 }}>✕</button>
         </div>
         <div style={{ overflowY: "auto", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-start" }}>
-          {cards.map((card, i) => (
-            <CardComponent key={i} card={card} small />
-          ))}
+          {cards.map((card, i) => <CardComponent key={i} card={card} small />)}
         </div>
-        <button onClick={onClose} className="btn-secondary" style={{ width: "100%", padding: "10px", fontSize: 13 }}>
-          Close
-        </button>
+        <button onClick={onClose} className="btn-secondary" style={{ width: "100%", padding: "10px", fontSize: 13 }}>Close</button>
       </div>
     </div>
   );
@@ -147,19 +131,13 @@ function WonPile({ cards, faceUp, label }: { cards: Card[]; faceUp: boolean; lab
   const score = calculateScore(cards);
   const count = cards.length;
   const stackDepth = Math.min(count, 4);
-  // Last won card shown face-up on top of our pile
   const topCard = faceUp && count > 0 ? cards[count - 1] : null;
   const isRed = topCard && (topCard.suit === "hearts" || topCard.suit === "diamonds");
   const topColor = isRed ? "#d93f3f" : "#111";
 
   if (count === 0) return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-      <div style={{
-        width: 44, height: 64, borderRadius: 6,
-        border: "2px dashed var(--border-color)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        color: "var(--text-muted)", fontSize: 18,
-      }}>✦</div>
+      <div style={{ width: 44, height: 64, borderRadius: 6, border: "2px dashed var(--border-color)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 18 }}>✦</div>
       <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{label}</div>
       <div style={{ fontSize: 11, color: "var(--text-muted)" }}>0 pts</div>
     </div>
@@ -167,39 +145,25 @@ function WonPile({ cards, faceUp, label }: { cards: Card[]; faceUp: boolean; lab
 
   return (
     <>
-      {modalOpen && faceUp && (
-        <WonCardsModal cards={cards} label={label} score={score} onClose={() => setModalOpen(false)} />
-      )}
-
-      <div
-        onClick={() => faceUp && setModalOpen(true)}
-        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: faceUp ? "pointer" : "default" }}
-      >
-        {/* Stacked pile */}
+      {modalOpen && faceUp && <WonCardsModal cards={cards} label={label} score={score} onClose={() => setModalOpen(false)} />}
+      <div onClick={() => faceUp && setModalOpen(true)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: faceUp ? "pointer" : "default" }}>
         <div style={{ position: "relative", width: 44, height: 64 + (stackDepth - 1) * 4 }}>
-
-          {/* Under-cards */}
           {Array.from({ length: stackDepth - 1 }).map((_, i) => (
             <div key={i} style={{
-              position: "absolute",
-              top: (stackDepth - 2 - i) * 4,
+              position: "absolute", top: (stackDepth - 2 - i) * 4,
               width: 44, height: 64, borderRadius: 6,
               background: faceUp ? "#f0ece4" : "linear-gradient(135deg, #1a5c2e, #0d3318)",
               border: faceUp ? "1px solid #d0c0b0" : "1px solid #3a8a4a",
               boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
             }} />
           ))}
-
-          {/* Top card */}
           <div style={{
-            position: "absolute",
-            top: (stackDepth - 1) * 4,
+            position: "absolute", top: (stackDepth - 1) * 4,
             width: 44, height: 64, borderRadius: 6,
             background: faceUp ? "#fffdf8" : "linear-gradient(135deg, #1a5c2e, #0d3318)",
             border: faceUp ? "1px solid #d0c0b0" : "1px solid #3a8a4a",
             boxShadow: "0 3px 8px rgba(0,0,0,0.45)",
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "space-between",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between",
             padding: faceUp ? "3px" : 0, overflow: "hidden",
           }}>
             {topCard ? (
@@ -209,30 +173,18 @@ function WonPile({ cards, faceUp, label }: { cards: Card[]; faceUp: boolean; lab
                 <div style={{ fontSize: 9, fontWeight: "800", color: topColor, alignSelf: "flex-end", transform: "rotate(180deg)", lineHeight: 1 }}>{topCard.rank}</div>
               </>
             ) : (
-              <div style={{
-                position: "absolute", inset: 3, borderRadius: 4,
-                background: "linear-gradient(135deg, #1a5c2e, #0d3318)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "rgba(255,255,255,0.2)", fontSize: 14,
-              }}>✦</div>
+              <div style={{ position: "absolute", inset: 3, borderRadius: 4, background: "linear-gradient(135deg, #1a5c2e, #0d3318)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.2)", fontSize: 14 }}>✦</div>
             )}
           </div>
-
-          {/* Score badge */}
           <div style={{
-            position: "absolute",
-            top: (stackDepth - 1) * 4 - 8,
-            right: -10,
-            background: faceUp ? "#c9a84c" : "#3a6a3a",
-            borderRadius: 10, padding: "2px 7px",
-            fontSize: 11, fontWeight: "800",
-            color: faceUp ? "#1a1a0a" : "#88cc88",
+            position: "absolute", top: (stackDepth - 1) * 4 - 8, right: -10,
+            background: faceUp ? "#c9a84c" : "#3a6a3a", borderRadius: 10, padding: "2px 7px",
+            fontSize: 11, fontWeight: "800", color: faceUp ? "#1a1a0a" : "#88cc88",
             boxShadow: "0 2px 6px rgba(0,0,0,0.4)", whiteSpace: "nowrap",
           }}>
             {score}pts
           </div>
         </div>
-
         <div style={{ fontSize: 11, color: faceUp ? "var(--accent-gold)" : "var(--text-muted)", fontWeight: "600" }}>
           {label} {faceUp && <span style={{ fontSize: 10, color: "var(--text-muted)" }}>👁</span>}
         </div>
@@ -261,6 +213,8 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
   const [myProfile, setMyProfile] = useState<any>(null);
   const [gameStateId, setGameStateId] = useState<string>("");
   const gameStateIdRef = useRef<string>("");
+  // Ref so handlePlayCard always reads the latest gameStateId without stale closure
+  const gameStateIdStateRef = useRef<string>("");
 
   const isMyTurn = gameState?.whose_turn === currentUserId;
 
@@ -272,6 +226,11 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
     ? (currentUserId === gameState.player1_id ? gameState.won_cards_p1 : gameState.won_cards_p2) : [];
   const opponentWonCards = gameState
     ? (currentUserId === gameState.player1_id ? gameState.won_cards_p2 : gameState.won_cards_p1) : [];
+
+  function setGameStateIdBoth(val: string) {
+    gameStateIdStateRef.current = val;
+    setGameStateId(val);
+  }
 
   function rowToGameState(row: any, hostId: string, guestId: string): GameState {
     return {
@@ -294,7 +253,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
     }).select().maybeSingle();
     if (!error && data) {
       gameStateIdRef.current = data.id;
-      setGameStateId(data.id);
+      setGameStateIdBoth(data.id);
       setGameState(state);
     }
   }
@@ -304,8 +263,12 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
       const { data } = await supabase.from("dreams_game_state").select("*").eq("room_id", id).maybeSingle();
       if (data) {
         gameStateIdRef.current = data.id;
-        setGameStateId(data.id);
+        setGameStateIdBoth(data.id);
         setGameState(rowToGameState(data, roomData.host_id, roomData.guest_id));
+        // If game already finished by the time guest loads, redirect immediately
+        if (data.status === "finished") {
+          window.location.href = `/end/${id}`;
+        }
         return;
       }
       await new Promise(res => setTimeout(res, 2000));
@@ -334,8 +297,12 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
       const { data: existingState } = await supabase.from("dreams_game_state").select("*").eq("room_id", id).maybeSingle();
       if (existingState) {
         gameStateIdRef.current = existingState.id;
-        setGameStateId(existingState.id);
+        setGameStateIdBoth(existingState.id);
         setGameState(rowToGameState(existingState, roomData.host_id, roomData.guest_id));
+        if (existingState.status === "finished") {
+          window.location.href = `/end/${id}`;
+          return;
+        }
         setLoading(false);
       } else if (roomData.host_id === user.id) {
         await initGame(roomData);
@@ -349,6 +316,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // Realtime subscription
   useEffect(() => {
     if (!gameStateId) return;
     const channel = supabase.channel(`game-state-${gameStateId}`)
@@ -364,9 +332,14 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
           deal_number: s.deal_number, status: s.status ?? "active", turn_started_at: s.turn_started_at,
         } : prev);
         setSelectedCard(null);
+
+        // Redirect the player who did NOT play the final card
+        if (s.status === "finished") {
+          setTimeout(() => { window.location.href = `/end/${id}`; }, 1200);
+        }
       }).subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [gameStateId]);
+  }, [gameStateId, id]);
 
   async function handlePlayCard(card: Card) {
     if (!gameState || !isMyTurn) return;
@@ -375,6 +348,8 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
       return;
     }
     setMessage("");
+    // Clear selection immediately — no waiting for DB round-trip
+    setSelectedCard(null);
 
     const newTrick = [...gameState.current_trick, { card, playerId: currentUserId }];
     const newMyHand = myHand.filter(c => c.id !== card.id);
@@ -419,34 +394,35 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
       }
     }
 
-    await supabase.from("dreams_game_state").update(updates).eq("id", gameStateId);
+    // Optimistic local update so UI responds before DB round-trip
+    setGameState(prev => prev ? { ...prev, ...updates } : prev);
+
+    await supabase.from("dreams_game_state").update(updates).eq("id", gameStateIdStateRef.current);
+
     if (updates.status === "finished") {
       setTimeout(() => { window.location.href = `/end/${id}`; }, 1200);
     }
-    setSelectedCard(null);
   }
 
   // ── Loading states ────────────────────────────────────────────────────────
 
   if (loading) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ color: "var(--accent-gold)", fontSize: "18px" }}>Setting up the table...</div>
+      <div style={{ color: "var(--accent-gold)", fontSize: 18 }}>Setting up the table...</div>
     </div>
   );
 
   if (!gameState) return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-      <div style={{ color: "var(--accent-gold)", fontSize: "18px" }}>Waiting for host to deal cards…</div>
-      <div style={{ color: "var(--text-muted)", fontSize: "13px" }}>This only takes a moment</div>
-      {message && <div style={{ color: "var(--text-muted)", fontSize: "12px" }}>{message}</div>}
+      <div style={{ color: "var(--accent-gold)", fontSize: 18 }}>Waiting for host to deal cards…</div>
+      <div style={{ color: "var(--text-muted)", fontSize: 13 }}>This only takes a moment</div>
+      {message && <div style={{ color: "var(--text-muted)", fontSize: 12 }}>{message}</div>}
     </div>
   );
 
   if (gameState.status === "finished") return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ color: "var(--accent-gold)", fontSize: "24px", textAlign: "center" }}>
-        🎉 Game Over! Calculating results...
-      </div>
+      <div style={{ color: "var(--accent-gold)", fontSize: 24, textAlign: "center" }}>🎉 Game Over! Calculating results...</div>
     </div>
   );
 
@@ -467,9 +443,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 26 }}>{ICONS[opponentProfile?.icon_id ?? 0]}</span>
           <div>
-            <div style={{ color: "var(--text-primary)", fontWeight: "700", fontSize: 13 }}>
-              {opponentProfile?.nickname ?? "Opponent"}
-            </div>
+            <div style={{ color: "var(--text-primary)", fontWeight: "700", fontSize: 13 }}>{opponentProfile?.nickname ?? "Opponent"}</div>
             <div style={{ color: "var(--text-muted)", fontSize: 11 }}>{opponentHand.length} cards in hand</div>
           </div>
         </div>
@@ -477,8 +451,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
           {!isMyTurn && (
             <div style={{
               background: "rgba(201,168,76,0.15)", border: "1px solid var(--accent-gold)",
-              borderRadius: 16, padding: "3px 10px",
-              color: "var(--accent-gold)", fontSize: 11, fontWeight: "700",
+              borderRadius: 16, padding: "3px 10px", color: "var(--accent-gold)", fontSize: 11, fontWeight: "700",
             }}>Thinking...</div>
           )}
           <div style={{ color: "var(--text-muted)", fontSize: 11, textAlign: "right" }}>
@@ -489,10 +462,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
       </div>
 
       {/* Opponent hand — full-size card backs */}
-      <div style={{
-        display: "flex", justifyContent: "center", gap: 6,
-        flexWrap: "nowrap", overflowX: "auto", padding: "2px 0", flexShrink: 0,
-      }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "nowrap", overflowX: "auto", padding: "2px 0", flexShrink: 0 }}>
         {opponentHand.map((_, i) => <CardBack key={i} width={58} height={88} />)}
       </div>
 
@@ -503,18 +473,13 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
         padding: "12px 16px", flexShrink: 0,
         display: "flex", flexDirection: "column", gap: 10,
       }}>
-        {/* Won piles row */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <WonPile cards={myWonCards} faceUp label="You" />
           <div style={{ textAlign: "center", flex: 1 }}>
             {gameState.lead_suit ? (
               <div>
                 <div style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 2 }}>Lead suit</div>
-                <div style={{
-                  fontSize: 24,
-                  color: (gameState.lead_suit === "hearts" || gameState.lead_suit === "diamonds")
-                    ? "var(--red-suit)" : "var(--text-primary)",
-                }}>
+                <div style={{ fontSize: 24, color: (gameState.lead_suit === "hearts" || gameState.lead_suit === "diamonds") ? "var(--red-suit)" : "var(--text-primary)" }}>
                   {getSuitSymbol(gameState.lead_suit as Suit)}
                 </div>
               </div>
@@ -525,7 +490,6 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
           <WonPile cards={opponentWonCards} faceUp={false} label={opponentProfile?.nickname ?? "Opp"} />
         </div>
 
-        {/* Current trick */}
         <div style={{
           borderTop: "1px solid var(--border-color)", paddingTop: 10,
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -568,10 +532,11 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
         {isMyTurn ? "Tap to select · Tap again to play" : "Opponent's turn"}
       </div>
 
-      {/* My hand */}
+      {/* My hand — position:relative + z-index so raised cards clear the turn text above */}
       <div style={{
         display: "flex", justifyContent: "center", gap: 6,
-        flexWrap: "nowrap", overflowX: "auto", padding: "4px 0 8px", flexShrink: 0,
+        flexWrap: "nowrap", overflowX: "auto", padding: "20px 0 8px",
+        flexShrink: 0, position: "relative", zIndex: 5,
       }}>
         {myHand.map((card) => {
           const canPlay = isMyTurn && canPlayCard(card, myHand, gameState.lead_suit ?? null);
@@ -603,11 +568,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
           </div>
         </div>
         {isMyTurn && selectedCard && (
-          <button
-            className="btn-primary"
-            onClick={() => handlePlayCard(selectedCard)}
-            style={{ padding: "8px 18px", fontSize: 13 }}
-          >
+          <button className="btn-primary" onClick={() => handlePlayCard(selectedCard)} style={{ padding: "8px 18px", fontSize: 13 }}>
             Play {selectedCard.rank}{getSuitSymbol(selectedCard.suit)}
           </button>
         )}
