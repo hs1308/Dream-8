@@ -22,6 +22,8 @@ export interface GameState {
   player1_id: string;
   player2_id: string;
   turn_started_at: string;
+  // Tracks who started deal 1 so we can alternate strictly by deal number
+  deal1_starter_id: string;
 }
 
 const SUITS: Suit[] = ["spades", "hearts", "diamonds", "clubs"];
@@ -82,7 +84,6 @@ export function determineRoundWinner(
 ): string {
   const leadCards = trick.filter(t => t.card.suit === leadSuit);
   if (leadCards.length === 0) return trick[0].playerId;
-  
   let winner = leadCards[0];
   for (const play of leadCards) {
     if (RANK_ORDER[play.card.rank] > RANK_ORDER[winner.card.rank]) {
@@ -112,6 +113,21 @@ export function getSuitColor(suit: Suit): string {
   return suit === "hearts" || suit === "diamonds" ? "#e05252" : "#1a1a1a";
 }
 
+/**
+ * Given the deal number and who started deal 1, return who starts this deal.
+ * Odd deals (1, 3, 5, 7...) → deal1_starter_id
+ * Even deals (2, 4, 6, 8...) → the other player
+ */
+export function getDealStarter(
+  dealNumber: number,
+  deal1StarterId: string,
+  player1Id: string,
+  player2Id: string
+): string {
+  const otherId = deal1StarterId === player1Id ? player2Id : player1Id;
+  return dealNumber % 2 === 1 ? deal1StarterId : otherId;
+}
+
 export function initializeGame(
   player1Id: string,
   player2Id: string,
@@ -119,7 +135,7 @@ export function initializeGame(
 ): GameState {
   const deck = shuffleDeck(createDeck());
   const { player1Hand, player2Hand, remaining } = dealCards(deck);
-  
+
   return {
     deck: remaining,
     player1_hand: player1Hand,
@@ -135,5 +151,6 @@ export function initializeGame(
     player1_id: player1Id,
     player2_id: player2Id,
     turn_started_at: new Date().toISOString(),
+    deal1_starter_id: startingPlayer,
   };
 }

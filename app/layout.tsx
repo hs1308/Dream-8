@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import GlobalRematchWatcher from "./GlobalRematchWatcher";
 
 export const metadata: Metadata = {
   title: "8 Dreams",
@@ -13,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <GlobalRematchWatcher />
+      </body>
     </html>
   );
 }
