@@ -22,8 +22,8 @@ export interface GameState {
   player1_id: string;
   player2_id: string;
   turn_started_at: string;
-  // Tracks who started deal 1 so we can alternate strictly by deal number
-  deal1_starter_id: string;
+  // Tracks who started the first game in the match.
+  deal1_starter: string;
 }
 
 const SUITS: Suit[] = ["spades", "hearts", "diamonds", "clubs"];
@@ -115,7 +115,7 @@ export function getSuitColor(suit: Suit): string {
 
 /**
  * Given the deal number and who started deal 1, return who starts this deal.
- * Odd deals (1, 3, 5, 7...) → deal1_starter_id
+ * Odd deals (1, 3, 5, 7...) → deal1_starter
  * Even deals (2, 4, 6, 8...) → the other player
  */
 export function getDealStarter(
@@ -151,6 +151,6 @@ export function initializeGame(
     player1_id: player1Id,
     player2_id: player2Id,
     turn_started_at: new Date().toISOString(),
-    deal1_starter_id: startingPlayer,
+    deal1_starter: startingPlayer,
   };
 }
